@@ -11,7 +11,7 @@ export const createDeck = (): Card[] => {
   // Generate all cards in the deck
   for (let suit of SUITS) {
     for (let value of VALUES) {
-      deck.push({ suit, value, imageUrl: `${process.env.PUBLIC_URL}/assets/cards/${value}_of_${suit}.png`});
+      deck.push({ suit, value, imageUrl: `/assets/cards/${value}_of_${suit}.png`});
     }
   }
 
