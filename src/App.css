@@ -1,0 +1,52 @@
+.game-board {
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+  align-items: center; /* Center align items horizontally */
+  padding: 20px;
+}
+
+.player-area,
+.dealer-area {
+  width: 100%;
+  max-width: 600px; /* Adjust width as needed */
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px; /* Space between dealer and player areas */
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap; /* Ensure cards wrap to next line if container width is exceeded */
+  justify-content: center; /* Center align cards horizontally */
+  gap: 10px; /* Adjust spacing between cards */
+}
+
+.actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center; /* Center align buttons horizontally */
+}
+
+.card {
+  width: 80px; /* Adjust size as needed */
+  height: 120px; /* Adjust size as needed */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  padding: 5px;
+  overflow: hidden; /* Ensure card contents don't overflow */
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-status {
+  margin-top: 20px;
+}
