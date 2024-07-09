@@ -1,16 +1,17 @@
-// NewGameButton.tsx
+// StartGameButton.tsx
+
 import React from 'react';
 
-interface NewGameButtonProps {
+interface StartGameButtonProps {
   onClick: () => void;
 }
 
-const NewGameButton: React.FC<NewGameButtonProps> = ({ onClick }) => {
+const StartGameButton: React.FC<StartGameButtonProps> = ({ onClick }) => {
   return (
-    <button onClick={onClick}>
-      New Game
+    <button className="button" onClick={onClick}>
+      Start Game
     </button>
   );
 };
 
-export default NewGameButton;
+export default StartGameButton;

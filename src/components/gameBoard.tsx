@@ -1,170 +1,133 @@
-// GameBoard.tsx
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import StartGameButton from './StartGameButton';
 import HitButton from './HitButton';
 import StandButton from './StandButton';
 import NewGameButton from './NewGameButton';
 import CardComponent from './CardComponent';
-import { Card } from '../types/types';
-import { createDeck } from '../services/deckService';
+import { Card, GameState } from '../types/types';
+import './GameBoard.css';
+import { calculateHandValue } from '../utils/CalculateHandValue';
 
 const GameBoard: React.FC = () => {
-  const [deck, setDeck] = useState<Card[]>([]);
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [dealerHand, setDealerHand] = useState<Card[]>([]);
-  const [gameStatus, setGameStatus] = useState<string>('');
+  const [gameState, setGameState] = useState<GameState>({
+    deck: [],
+    playerHand: [],
+    dealerHand: [],
+    gameStatus: 'waiting'
+  });
+  const [loading, setLoading] = useState<boolean>(false);
+  const [winner, setWinner] = useState<string>('');
+  const [revealedCards, setRevealedCards] = useState<{ player: boolean[], dealer: boolean[] }>({ player: [], dealer: [] });
 
-  const startGame = () => {
-    const newDeck = createDeck();
-    const playerCards = dealCards(newDeck, 2);
-    const dealerCards = dealCards(newDeck, 1);
-    setDeck(newDeck);
-    setPlayerHand(playerCards);
-    setDealerHand(dealerCards);
-    setGameStatus('ongoing');
+  const fetchInitialState = async () => {
+    setLoading(true);
+    const response = await fetch('http://localhost:3001/api/game/initial-state');
+    const data = await response.json();
+    setPlayerHand(data.playerHand);
+    setDealerHand(data.dealerHand);
+    setGameState(data);
+    setLoading(false);
+    setRevealedCards({ player: new Array(data.playerHand.length).fill(false), dealer: new Array(data.dealerHand.length).fill(false) });
   };
 
-  const dealCards = (currentDeck: Card[], numCards: number): Card[] => {
-    const cardsDealt = currentDeck.slice(0, numCards);
-    currentDeck.splice(0, numCards);
-    return cardsDealt;
-  };
+  useEffect(() => {
+    fetchInitialState();
+  }, []);
 
-  const hit = () => {
-    const newPlayerHand = [...playerHand, deck[0]];
-    const newDeck = deck.slice(1);
-    setPlayerHand(newPlayerHand);
-    setDeck(newDeck);
-  };
-  const stand = () => {
-    // If dealer only has one card, reveal the second card
-    if (dealerHand.length === 1) {
-      const newDealerHand = [...dealerHand, deck[0]];
-      const newDeck = deck.slice(1);
-      setDealerHand(newDealerHand);
-      setDeck(newDeck);
-    }
-  
-    // Define a function for dealer drawing cards until total is 17 or higher
-    const drawDealerCards = () => {
-      let currentDealerHand = [...dealerHand];
-  
-      while (calculateHandValue(currentDealerHand) < 17) {
-        currentDealerHand = [...currentDealerHand, deck[0]];
-        const newDeck = deck.slice(1);
-        setDealerHand(currentDealerHand);
-        setDeck(newDeck);
-      }
-  
-      return currentDealerHand;
-    };
-  
-    // Update dealer hand and determine winner
-    const updatedDealerHand = drawDealerCards();
-  
-    // If dealer has an Ace, dynamically adjust its value
-    const hasAce = updatedDealerHand.some(card => card.value === 'ace');
-    if (hasAce) {
-      let adjustedValue = calculateHandValue(updatedDealerHand);
-  
-      if (adjustedValue <= 11 && adjustedValue + 10 <= 21) {
-        adjustedValue += 10;
-      }
-  
-      const updatedHandWithAce = updatedDealerHand.map(card => {
-        if (card.value === 'ace') {
-          return { ...card, value: '11' }; // Assuming '11' represents an Ace valued at 11
+  const revealNextCard = (hand: 'player' | 'dealer', delay: number) => {
+    setTimeout(() => {
+      setRevealedCards(prev => {
+        const updatedHand = [...prev[hand]];
+        const index = updatedHand.findIndex(revealed => !revealed);
+        if (index !== -1) {
+          updatedHand[index] = true;
+          if (index < updatedHand.length - 1) {
+            revealNextCard(hand, delay);
+          }
         }
-        return card;
+        return { ...prev, [hand]: updatedHand };
       });
-  
-      setDealerHand(updatedHandWithAce);
-    }
-  
-    // Determine winner after dealer stops drawing
-    determineWinner();
-  };
-  
-
-  const newGame = () => {
-    setPlayerHand([]);
-    setDealerHand([]);
-    setGameStatus('');
+    }, delay);
   };
 
-  const calculateHandValue = (hand: Card[]): number => {
-    let total = 0;
-    let aceCount = 0;
+  useEffect(() => {
+    if (playerHand.length > 0) revealNextCard('player', 500);
+    if (dealerHand.length > 0) revealNextCard('dealer', 1000);
+  }, [playerHand, dealerHand]);
 
-    for (let card of hand) {
-      if (card.value === 'ace') {
-        aceCount++;
-      } else if (['jack', 'queen', 'king'].includes(card.value)) {
-        total += 10;
-      } else {
-        total += Number(card.value);
-      }
-    }
-
-    for (let i = 0; i < aceCount; i++) {
-      if (total + 11 <= 21) {
-        total += 11;
-      } else {
-        total += 1;
-      }
-    }
-
-    return total;
+  const handleHit = async () => {
+    const response = await fetch('http://localhost:3001/api/game/hit', {
+      method: 'POST',
+    });
+    const data = await response.json();
+    setPlayerHand(data.playerHand);
+    setGameState(data);
+    setWinner(data.winner);
+    revealNextCard('player', 500);
   };
 
-  const determineWinner = () => {
-    const playerTotal = calculateHandValue(playerHand);
-    const dealerTotal = calculateHandValue(dealerHand);
+  const handleStand = async () => {
+    const response = await fetch('http://localhost:3001/api/game/stand', {
+      method: 'POST',
+    });
+    const data = await response.json();
+    setDealerHand(data.dealerHand);
+    setGameState(data);
+    setWinner(data.winner);
+    revealNextCard('dealer', 1000);
+  };
 
-    if (playerTotal > 21) {
-      setGameStatus('Dealer wins!');
-    } else if (dealerTotal > 21) {
-      setGameStatus('Player wins!');
-    } else if (playerTotal > dealerTotal) {
-      setGameStatus('Player wins!');
-    } else if (dealerTotal >= playerTotal) {
-      setGameStatus('Dealer wins!');
-    }
+  const handleNewGame = async () => {
+    const response = await fetch('http://localhost:3001/api/game/new-game', {
+      method: 'POST',
+    });
+    const data = await response.json();
+    setPlayerHand(data.playerHand);
+    setDealerHand(data.dealerHand);
+    setGameState(data);
+    setWinner('');
+    setRevealedCards({ player: new Array(data.playerHand.length).fill(false), dealer: new Array(data.dealerHand.length).fill(false) });
   };
 
   return (
     <div className="game-board">
-
-<div className="dealer-area">
-        <h2>Dealer</h2>
+      <div className="dealer-area">
+        <h2 className="centered-text">Dealer</h2>
+        <div className="score dealer-score">Score: {calculateHandValue(dealerHand)}</div>
         <div className="cards">
           {dealerHand.map((card, index) => (
-            <CardComponent key={index} card={card} />
+            <CardComponent key={index} card={card} className={revealedCards.dealer[index] ? 'card flip' : 'card'} />
           ))}
         </div>
       </div>
-      {gameStatus && (
-        <div className="game-status">
-          <h3>{gameStatus}</h3>
+      {winner && (
+        <div className="game-outcome">
+          <h3>{winner === 'Tie' ? "It's a tie!" : `${winner} won!`}</h3>
         </div>
       )}
-      
+      {!winner && gameState.gameStatus && (
+        <div className="game-status">
+          <h3>{gameState.gameStatus}</h3>
+        </div>
+      )}
       <div className="player-area">
-        <h2>Player</h2>
+        <h2 className="centered-text">Player</h2>
+        <div className="score player-score">Score: {calculateHandValue(playerHand)}</div>
         <div className="cards">
           {playerHand.map((card, index) => (
-            <CardComponent key={index} card={card} />
+            <CardComponent key={index} card={card} className={revealedCards.player[index] ? 'card flip' : 'card'} />
           ))}
         </div>
         <div className="actions">
-          {!gameStatus && <StartGameButton onClick={startGame} />}
-          {gameStatus === 'ongoing' && <HitButton onClick={hit} />}
-          {gameStatus === 'ongoing' && <StandButton onClick={stand} />}
-          {gameStatus && <NewGameButton onClick={newGame} />}
+          {!gameState.gameStatus && <StartGameButton onClick={fetchInitialState} />}
+          {gameState.gameStatus === 'playing' && <HitButton onClick={handleHit} />}
+          {gameState.gameStatus === 'playing' && <StandButton onClick={handleStand} />}
+          {gameState.gameStatus && <NewGameButton onClick={handleNewGame} />}
         </div>
       </div>
-
+      {loading && <div>Loading...</div>}
     </div>
   );
 };

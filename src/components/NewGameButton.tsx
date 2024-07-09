@@ -6,7 +6,7 @@ interface NewGameButtonProps {
 
 const NewGameButton: React.FC<NewGameButtonProps> = ({ onClick }) => {
   return (
-    <button onClick={onClick}>
+    <button className="button" onClick={onClick}>
       New Game
     </button>
   );

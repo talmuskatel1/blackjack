@@ -6,7 +6,7 @@ interface HitButtonProps {
 
 const HitButton: React.FC<HitButtonProps> = ({ onClick }) => {
   return (
-    <button onClick={onClick}>
+    <button className="button" onClick={onClick}>
       Hit
     </button>
   );
