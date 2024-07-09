@@ -6,7 +6,7 @@ interface StandButtonProps {
 
 const StandButton: React.FC<StandButtonProps> = ({ onClick }) => {
   return (
-    <button onClick={onClick}>
+    <button className="button" onClick={onClick}>
       Stand
     </button>
   );

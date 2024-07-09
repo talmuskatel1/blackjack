@@ -1,8 +1,9 @@
 export interface Card {
-    suit: string;
-    value: string;
-    imageUrl: string;
-  }
+  value: string;
+  suit: string;
+  imageUrl: string;
+}
+
   
   export interface GameState {
     deck: Card[];
