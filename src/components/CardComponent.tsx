@@ -1,14 +1,15 @@
 import React from 'react';
 import { Card } from '../types/types';
 
-interface CardProps {
+interface CardComponentProps {
   card: Card;
+  className?: string;
 }
 
-const CardComponent: React.FC<CardProps> = ({ card }) => {
+const CardComponent: React.FC<CardComponentProps> = ({ card, className }) => {
   return (
-    <div className="card">
-      <img src={`${process.env.PUBLIC_URL}/assets/cards/${card.value}_of_${card.suit}.png`} alt={`${card.value} of ${card.suit}`} />
+    <div className={className}>
+      <img src={card.imageUrl} alt={`${card.value} of ${card.suit}`} />
     </div>
   );
 };
